@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "PayloadPeek",
+  "version": "3.1.4",
+  "description": "Dockable in-page panel to search SAP CPI message processing log attachments for a keyword across all filtered messages, using the logged-in session cookie (no stored credentials).",
+  "permissions": ["storage", "scripting"],
+  "host_permissions": ["https://*.hana.ondemand.com/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Toggle PayloadPeek panel" },
+  "content_scripts": [
+    {
+      "matches": ["https://*.hana.ondemand.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
