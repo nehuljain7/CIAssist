@@ -1,0 +1,37 @@
+//This Groovy is used to add only one attachment per split, and remove all unnecesary attachments.
+import com.sap.gateway.ip.core.customdev.util.Message
+import java.util.Map
+
+def Message processData(Message message) {
+    String rcv = 'ERR'
+    try {
+       def f = new XmlSlurper().parse(message.getBody(java.io.Reader))
+       String name = f.File.Name.text()
+       rcv = f.File.Receiver.text() ?: 'ERR'
+
+        message.setHeader('AttName', name)
+        message.setHeader('AttReason', (message.getProperty('Reason_' + name) ?: '').toString())
+        message.setHeader('AttMime', name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/xml')
+
+        // real attachment map of this message
+        def wrappers = message.getAttachmentWrapperObjects()
+        def keep = wrappers.get(name)          // grab this run's file BEFORE clearing
+
+        wrappers.clear()                       // remove all attachments
+
+        if (rcv != 'SKIP' && keep != null) message.addAttachmentObject(name, keep)
+    
+        //   message.setHeader('AttCount',  String.valueOf(message.getAttachmentWrapperObjects().size()))  //This is used to get size of attachments
+        
+        try {
+            def mpl = messageLogFactory.getMessageLog(message)
+            mpl?.addCustomHeaderProperty('Att_' + name, rcv)
+        } catch (Throwable ignore) { }
+
+    } catch (Throwable e) {
+        rcv = 'ERR'
+        message.setHeader('AttReason', 'Script2: ' + e.toString())
+    }
+    message.setHeader('Receiver', rcv)
+    return message
+}              
